@@ -7,7 +7,7 @@ raw_hospitalization_df = pd.read_csv('aggregated_cc_by.csv')
 
 #REMOVE ALL LOCATIONS NOT PRESENT IN BOTH DATASETS
 st_location_set = set(raw_search_trends_df['open_covid_region_code'].tolist()) 
-# print(st_location_set)
+#print(st_location_set)
 hos_loc_filt_df = raw_hospitalization_df[raw_hospitalization_df['open_covid_region_code'].isin(st_location_set)]
 hos_loc_filt_df = hos_loc_filt_df.dropna(axis=1, how='all') # drops the columns with all null values
 #hos_loc_filt_df.to_csv("hos_loc_filt.csv", index=False)
@@ -48,8 +48,31 @@ hos_week_loc_new_filt_df = hos_week_loc_new_filt_df.set_index(['open_covid_regio
 
 combined_df = st_cleaned_data.join(hos_week_loc_new_filt_df, how='outer')
 combined_df = combined_df.fillna(0)
-print(combined_df)
-combined_df.to_csv("combined.csv", index=True)
+combined_df.reset_index(level=['open_covid_region_code', 'date'], inplace=True)
+#print(combined_df)
+#combined_df.to_csv("combined.csv", index=True)
+
+#IMPORT US POPULATION DATA TO BE ABLE TO NORMALIZE HOSPITALIZATIONS BY REGION
+us_pop_df = pd.read_csv('us_pop_data.csv')
+us_pop_df = us_pop_df[['State', 'Pop']] #remove all unnecessary data
+state_to_region_code = raw_search_trends_df[['open_covid_region_code', 'sub_region_1']]
+state_to_region_code = state_to_region_code.drop_duplicates()
+state_to_region_code = state_to_region_code.rename(columns={'sub_region_1' : 'State'})
+merged_region_state_pop = pd.merge(state_to_region_code, us_pop_df, on='State')
+merged_region_pop = merged_region_state_pop.drop(['State'], axis=1)
+region_pop_dict = dict(merged_region_pop.values.tolist())
+
+combined_df['normalized_hospitalized_new'] = 0
+per_pop_size = 100000
+for index, row in combined_df.iterrows():
+    new_hosp =  row['hospitalized_new']
+    state = row['open_covid_region_code']
+    state_pop = region_pop_dict[state]
+    normalized_hosp_p100k = (new_hosp / state_pop) * per_pop_size
+    combined_df.loc[index, 'normalized_hospitalized_new'] = normalized_hosp_p100k
+
+#print(combined_df)
+combined_df.to_csv("combined.csv", index=False)
 
 #good reference for doing all this stuff
 #   https://stackoverflow.com/questions/12096252/use-a-list-of-values-to-select-rows-from-a-pandas-dataframe
@@ -61,6 +84,8 @@ combined_df.to_csv("combined.csv", index=True)
 #   https://pandas.pydata.org/pandas-docs/stable/user_guide/merging.html
 #   https://stackoverflow.com/questions/40468069/merge-two-dataframes-by-index
 #   https://stackoverflow.com/questions/25478528/updating-value-in-iterrow-for-pandas
+
+# us population data from https://worldpopulationreview.com/states
 
 
 
