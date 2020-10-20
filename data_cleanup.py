@@ -36,16 +36,17 @@ for index, row in hos_week_loc_new_filt_df.iterrows():
     prev_loc = region
 
 #CLEANUP SEARCH TRENDS DATA COLUMNS BEFORE MERGE
-raw_search_trends_df['date'] = pd.to_datetime(raw_search_trends_df['date']) - pd.to_timedelta(7, unit='d')
+raw_search_trends_df['date'] = pd.to_datetime(raw_search_trends_df['date']) #- pd.to_timedelta(7, unit='d')
 st_cleaned_data = raw_search_trends_df.dropna(axis=1, how='all') #drops any columns that are entirely null values
 # st_cleaned_data = raw_search_trends_df.dropna(thresh=0.7*len(raw_search_trends_df) ,axis=1) #drops any columns with more than 70% data as nan if we wanted to
 st_cleaned_data = st_cleaned_data.drop(['country_region_code', 'country_region', 'sub_region_1_code', 'sub_region_1'], axis=1)
 # st_cleaned_data.to_csv("st_cleaned_data.csv", index=False)
 
-#JOIN THE DATAFRAMES TOGETHER
+#SET INDEXES TO REGION AND DATE
 st_cleaned_data = st_cleaned_data.set_index(['open_covid_region_code', 'date'])
 hos_week_loc_new_filt_df = hos_week_loc_new_filt_df.set_index(['open_covid_region_code', 'date'])
 
+#JOIN THE DATAFRAMES TOGETHER
 combined_df = st_cleaned_data.join(hos_week_loc_new_filt_df, how='outer')
 combined_df = combined_df.fillna(0)
 combined_df.reset_index(level=['open_covid_region_code', 'date'], inplace=True)
@@ -72,7 +73,7 @@ for index, row in combined_df.iterrows():
     combined_df.loc[index, 'normalized_hospitalized_new'] = normalized_hosp_p100k
 
 #print(combined_df)
-combined_df.to_csv("combined.csv", index=False)
+combined_df.to_csv("combined2.csv", index=False)
 
 #good reference for doing all this stuff
 #   https://stackoverflow.com/questions/12096252/use-a-list-of-values-to-select-rows-from-a-pandas-dataframe
