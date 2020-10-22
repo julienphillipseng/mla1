@@ -73,7 +73,7 @@ for index, row in combined_df.iterrows():
     combined_df.loc[index, 'normalized_hospitalized_new'] = normalized_hosp_p100k
 
 #print(combined_df)
-combined_df.to_csv("combined2.csv", index=False)
+combined_df.to_csv("combined.csv", index=False)
 
 #good reference for doing all this stuff
 #   https://stackoverflow.com/questions/12096252/use-a-list-of-values-to-select-rows-from-a-pandas-dataframe
